@@ -1,0 +1,115 @@
+<!DOCTYPE html> 
+<html lang="pt">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Campeonato de Surf - Avaliação</title>
+        <link rel="stylesheet" href="index.css">
+    </head>
+    
+    <h2>🏄‍♂️ Campeonato de Surf - Avaliação 🌊</h2>
+
+    <div>
+        <label>Nome do Participante:</label>
+        <input type="text" id="nome" placeholder="Digite o nome"><br>
+
+        <label>Notas (separe por vírgula):</label>
+        <input type="text" id="notas" placeholder="Ex: 7.5, 8.2, 6.9"><br>
+
+        <label>Nota de Corte:</label>
+        <input type="number" id="notaCorte" step="0.1"><br>
+
+        <button onclick="calcularNotas()">Calcular Média</button>
+        <button onclick="novoParticipante()">Novo Participante</button>
+        <button onclick="mostrarRanking()">Finalizar e Mostrar Ranking</button>
+        <button onclick="voltarInicio()">Voltar</button>
+
+        <h3 id="resultado"></h3>
+        <div id="ranking"></div>
+    </div>
+
+    <script>
+        let participantes = [];  
+
+        // Função lambda para encontrar a maior nota
+        const notaMaxima = (notas) => Math.max(...notas);  // Função Lambda
+
+        // List comprehension para transformar as notas em números
+        const stringToNotas = (notasStr) => notasStr.split(",").map(n => parseFloat(n.trim()));  // List Comprehension
+
+        // Closure para retornar a avaliação baseada na média
+        const gerarAvaliador = (notaCorte) => (media) => media >= notaCorte ? "Classificado para a próxima fase" : "Eliminado";  // Closure
+
+        // Função de alta ordem
+        const aplicarAvaliacao = (func, media) => func(media);  // Função de Alta Ordem
+
+        function calcularMediaPonderada(notas) {
+            let pesos = Array.from({ length: notas.length }, (_, i) => i + 1);
+            let totalPonderado = notas.reduce((soma, nota, i) => soma + nota * pesos[i], 0);
+            let pesoTotal = pesos.reduce((a, b) => a + b, 0);
+            return totalPonderado / pesoTotal;
+        }
+
+        function calcularNotas() {
+            const nome = document.getElementById("nome").value;
+            const notasStr = document.getElementById("notas").value;
+            const notaCorte = parseFloat(document.getElementById("notaCorte").value);
+
+            if (!nome || !notasStr || isNaN(notaCorte)) {
+                alert("Por favor, preencha todos os campos corretamente.");
+                return;
+            }
+
+            if (participantes.some(p => p.nome === nome)) {
+                alert("Erro: Nome já cadastrado!");
+                return;
+            }
+
+            // Usando List Comprehension para converter notas de string para números
+            const notas = stringToNotas(notasStr);
+            const media = calcularMediaPonderada(notas);
+            const maiorNota = notaMaxima(notas);
+
+            // Gerando avaliador usando Closure
+            const avaliador = gerarAvaliador(notaCorte);
+            const resultado = aplicarAvaliacao(avaliador, media);
+
+            participantes.push({ nome, media, maiorNota });
+
+            document.getElementById("resultado").innerHTML =
+                `Média: ${media.toFixed(2)}<br>
+                Maior Nota: ${maiorNota}<br>
+                Resultado: <strong>${resultado}</strong>`;
+        }
+
+        function novoParticipante() {
+            document.getElementById("nome").value = "";
+            document.getElementById("notas").value = "";
+            document.getElementById("notaCorte").value = "";
+            document.getElementById("resultado").innerHTML = "";
+        }
+
+        function mostrarRanking() {
+            if (participantes.length === 0) {
+                alert("Nenhum participante registrado.");
+                return;
+            }
+
+            participantes.sort((a, b) => b.media - a.media);
+
+            let rankingHTML = "<h3>🏆 Ranking de Participantes 🏆</h3><ol>";
+            participantes.forEach(p => {
+                rankingHTML += `<li>${p.nome} - Média: ${p.media.toFixed(2)} (Maior Nota: ${p.maiorNota})</li>`;
+            });
+            rankingHTML += "</ol>";
+
+            document.getElementById("ranking").innerHTML = rankingHTML;
+        }
+
+        function voltarInicio() {
+            document.getElementById("ranking").style.display = "none";
+            document.querySelector("div").style.display = "block"; 
+        }
+    </script>
+</body>
+</html>
